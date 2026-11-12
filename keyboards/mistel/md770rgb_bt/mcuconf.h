@@ -1,0 +1,28 @@
+// Copyright 2026 Mark Ellis (@markwellis)
+// SPDX-License-Identifier: GPL-2.0-or-later
+#pragma once
+#include "nvic.h"
+
+#define HT32F52352_MCUCONF
+#define HT32_CKCU_SW CKCU_GCCR_SW_PLL
+#define HT32_PLL_USE_HSE FALSE
+#define HT32_PLL_FBDIV 6
+#define HT32_PLL_OTDIV 0
+#define HT32_AHB_PRESCALER 1
+#define HT32_USART_PRESCALER 1
+#define HT32_USB_PRESCALER 1
+#define HT32_ST_USE_HCLK TRUE
+// The pinned platform reports eight priority bits; vendor CMSIS specifies two.
+#define MD770_IRQ_PRIORITY(level) ((level) << (CORTEX_PRIORITY_BITS - 2))
+
+#define HT32_USB_USE_USB0 TRUE
+#define HT32_USB_USB0_IRQ_PRIORITY MD770_IRQ_PRIORITY(0)
+#define HT32_SERIAL_USE_USART0 TRUE
+#define HT32_USART0_IRQ_PRIORITY MD770_IRQ_PRIORITY(1)
+#define HT32_SPI_USE_SPI1 TRUE
+#define HT32_SPI1_IRQ_PRIORITY MD770_IRQ_PRIORITY(3)
+#define HT32_GPT_USE_BFTM0 TRUE
+#define HT32_GPT_USE_BFTM1 TRUE
+
+#define HT32_GPT_BFTM0_IRQ_PRIORITY MD770_IRQ_PRIORITY(2)
+#define HT32_GPT_BFTM1_IRQ_PRIORITY MD770_IRQ_PRIORITY(2)
