@@ -32,6 +32,7 @@ firmware_list.json
 api_data/v1
 quantum/version.h
 *.bin
+*.iap-backup.json
 *.eep
 *.hex
 *.qmk
