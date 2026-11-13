@@ -18,6 +18,6 @@ void spi_init(void) {
     if (spi_start(A9, false, 0, EXTERNAL_FLASH_SPI_CLOCK_DIVISOR)) {
         spi_write(0xab);
         spi_stop();
-        wait_us(10);
+        wait_us(20);
     }
 }
