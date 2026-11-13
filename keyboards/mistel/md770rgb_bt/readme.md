@@ -31,6 +31,8 @@ then verifies the application and restored metadata. Keep that backup until
 the keyboard works. If interrupted, reconnect in updater mode and retry the
 same command with the same backup. Normal flashing preserves the factory
 bootloader and protection settings and needs no PCB bridge.
+On Linux, install the current [QMK udev rules](https://docs.qmk.fm/faq_build#linux-udev-rules)
+with MD770 application/updater support before flashing.
 
 The right half is the USB master. The left half can also report its local keys over USB when used independently. Both halves use the keyboard's UART protocol; operation with mixed QMK and vendor firmware has not been tested.
 
