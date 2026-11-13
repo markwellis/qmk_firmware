@@ -13,7 +13,11 @@ void md770_link_init(void) {
     palSetLineMode(B0, PAL_MODE_HT32_AF(6) | PAL_MODE_OUTPUT_PUSHPULL);
     palSetLineMode(B1, PAL_MODE_HT32_AF(6) | PAL_MODE_INPUT);
 #ifdef MD770_LEFT
-    gpio_set_pin_input(B8);
+    gpio_set_pin_input_low(B8);
+#else
+    gpio_set_pin_input_high(B8);
+    gpio_write_pin_high(B11);
+    palSetLineMode(B11, PAL_MODE_OUTPUT_PUSHPULL | PAL_MODE_INPUT);
 #endif
     sdStart(&SD0, &serial_config);
 }
