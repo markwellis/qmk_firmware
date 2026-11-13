@@ -13,6 +13,15 @@ Build each half from the QMK root:
     make mistel/md770rgb_bt/right:default
     make mistel/md770rgb_bt/left:default
 
+Install [pok3rtool](https://github.com/pok3r-custom/pok3rtool) with MD770 RGB BT
+support. Until that support is merged, use the
+[MD770 device-ID branch](https://github.com/markwellis/pok3rtool/tree/mistel-md770).
+The tool's existing CYKB protocol handles both the initial stock-to-QMK
+installation and subsequent updates through the retained Mistel bootloader.
+On Linux, install the current
+[QMK udev rules](https://docs.qmk.fm/faq_build#linux-udev-rules)
+with MD770 application/updater support for USB access without root.
+
 Flash each half separately, using its normal host USB port with the
 inter-half cable disconnected:
 
@@ -22,17 +31,20 @@ inter-half cable disconnected:
 Equivalent QMK CLI commands are `qmk flash -kb mistel/md770rgb_bt/right -km default`
 and `qmk flash -kb mistel/md770rgb_bt/left -km default`. Stock firmware enters
 its retained USB updater automatically. From QMK, use one of the bootloader
-shortcuts below before flashing. Connect only the half being flashed.
+shortcuts below before flashing. Connect only the half being flashed and
+check that the image belongs to that half.
 
-The native Mistel flasher checks that the image matches the connected half,
-saves updater metadata beside the copied binary in the QMK root as
-`*.bin.iap-backup.json`,
-then verifies the application and restored metadata. Keep that backup until
-the keyboard works. If interrupted, reconnect in updater mode and retry the
-same command with the same backup. Normal flashing preserves the factory
-bootloader and protection settings and needs no PCB bridge.
-On Linux, install the current [QMK udev rules](https://docs.qmk.fm/faq_build#linux-udev-rules)
-with MD770 application/updater support before flashing.
+The flash target invokes the external tool as follows:
+
+    pok3rtool flash QMK mistel_md770rgb_bt_right_default.bin --no-boot
+
+Use the left binary for the left half. The tool verifies application checksums
+and writes its version metadata. It leaves the half in the updater after a
+successful update: unplug and reconnect USB to start QMK. Automatic return
+checking expects Mistel's vendor interface, which QMK does not expose.
+Normal flashing preserves the factory bootloader and protection settings
+and needs no PCB bridge. Images must be word-aligned and no larger than
+115 KiB (`0x1cc00`); the port's normal builds satisfy these requirements.
 
 The right half is the USB master. The left half can also report its local keys over USB when used independently. Both halves use the keyboard's UART protocol; operation with mixed QMK and vendor firmware has not been tested.
 
