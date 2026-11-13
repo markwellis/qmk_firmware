@@ -17,7 +17,7 @@ static volatile matrix_row_t scanned[8];
 static void scan_tick(GPTDriver *driver) {
     (void)driver;
     // Matrix inputs share GPIOA with the strobed LED rows.
-    GPIOA->RR   = SENSE_MASK;
+    palClearPort(GPIOA, SENSE_MASK);
     GPTM1->CTR  = 0;
     GPTM1->CNTR = 0;
     md770_rgb_latch();
@@ -30,7 +30,7 @@ static void scan_tick(GPTDriver *driver) {
         __NOP();
         __NOP();
         __NOP();
-        scanned[row] = (GPIOA->DINR >> SENSE_SHIFT) & 0xff;
+        scanned[row] = (palReadPort(GPIOA) >> SENSE_SHIFT) & 0xff;
         gpio_write_pin_low(select_pins[row]);
         GPIOA->DIRCR |= SENSE_MASK;
     }
