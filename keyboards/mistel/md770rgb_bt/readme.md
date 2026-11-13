@@ -36,7 +36,7 @@ with MD770 application/updater support before flashing.
 
 The right half is the USB master. The left half can also report its local keys over USB when used independently. Both halves use the keyboard's UART protocol; operation with mixed QMK and vendor firmware has not been tested.
 
-QMK settings on the right use external SPI flash at `0x0000`–`0x1fff`, replacing the vendor global-settings sector and first profile sector. Back up any vendor settings you need before using the port. Clear QMK settings when changing the layer or storage layout. Standalone left-half settings are transient.
+QMK reserves the first 64 KiB of the right half's 512 KiB external SPI flash (`0x0000`–`0xffff`), with an 8 KiB backing store and 4 KiB logical EEPROM. Settings resets and journal consolidation erase the whole reserved block, including vendor settings and macro data within it. Save any stock settings or macros you need before using the port. Clear QMK settings when changing the layer or storage layout. Standalone left-half settings are transient.
 
 The default keymap keeps the factory Fn media/navigation shortcuts and Pn lighting controls. Pn+Escape selects a colour, Pn+F5 advances the effect, Pn+0 turns lighting off, Pn+Up/Down changes brightness and Pn+Left/Right changes speed. Pn+F6/F7/F8 adjusts red/green/blue. Lighting defaults off; effects use QMK RGB Matrix.
 
