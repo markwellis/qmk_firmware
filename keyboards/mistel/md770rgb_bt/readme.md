@@ -37,6 +37,6 @@ The right-half DIP switches retain their factory functions:
 * Hold Delete on the right half, or Escape on the left half, while connecting USB to clear QMK settings and enter the stock updater.
 * Pn+Insert enters the stock updater from running QMK firmware.
 
-These methods need functioning firmware. Independent ROM recovery is documented in the [recovery procedure](https://github.com/markwellis/md770-qmk-firmware-stuff/blob/main/docs/right-recovery-package.md). Right-half stock restoration has been verified; left-half recovery remains untested.
+These methods need functioning firmware. Independent ROM recovery and verified stock restoration are documented for the [right half](https://github.com/markwellis/md770-qmk-firmware-stuff/blob/main/docs/right-recovery-package.md) and [left half](https://github.com/markwellis/md770-qmk-firmware-stuff/blob/main/docs/left-recovery-package.md).
 
 The stock bootloader uses a custom update protocol. No automatic QMK flashing target is provided.
