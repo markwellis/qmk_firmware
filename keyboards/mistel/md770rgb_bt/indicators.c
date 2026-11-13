@@ -63,9 +63,19 @@ void suspend_wakeup_init_kb(void) {
 }
 
 bool shutdown_kb(bool jump_to_bootloader) {
-    if (shutdown_user(jump_to_bootloader)) {
-        md770_set_layer_led(7);
-        wait_ms(250);
+    if (shutdown_user(jump_to_bootloader) && initialised) {
+        for (uint8_t i = 0; i < (jump_to_bootloader ? 3 : 1); ++i) {
+            md770_set_layer_led(7);
+            if (jump_to_bootloader) {
+                led_update_ports((led_t){.caps_lock = true});
+            }
+            wait_ms((jump_to_bootloader ? 100 : 250));
+            if (jump_to_bootloader) {
+                md770_set_layer_led(0);
+                led_update_ports((led_t){0});
+                wait_ms(100);
+            }
+        }
     }
     return true;
 }
