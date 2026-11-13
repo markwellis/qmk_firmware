@@ -150,10 +150,6 @@ Configurable options in your keyboard's `config.h`:
 There is currently a limit of 64kB for the EEPROM subsystem within QMK, so using a larger flash is not going to be beneficial as the logical size cannot be increased beyond 65536. The backing size may be increased to a larger value, but erase timing may suffer as a result.
 :::
 
-The backing size may be smaller than the allocated flash blocks. Erasure covers
-only the sectors containing the backing store; complete aligned blocks use the
-block-erase command. Bytes sharing the final sector are also erased.
-
 ## Wear-leveling RP2040 Driver Configuration {#wear_leveling-rp2040-driver-configuration}
 
 This driver performs writes to the same underlying storage that the RP2040 executes its code.

@@ -8,18 +8,6 @@
 #include "wear_leveling_flash_spi_config.h"
 #include "wear_leveling_internal.h"
 
-#define ERASE_START ((uint64_t)(WEAR_LEVELING_EXTERNAL_FLASH_BLOCK_OFFSET) * (EXTERNAL_FLASH_BLOCK_SIZE))
-#define ERASE_SIZE ((((uint64_t)(WEAR_LEVELING_BACKING_SIZE) + (EXTERNAL_FLASH_SECTOR_SIZE) - 1) / (EXTERNAL_FLASH_SECTOR_SIZE)) * (EXTERNAL_FLASH_SECTOR_SIZE))
-
-STATIC_ASSERT(EXTERNAL_FLASH_SECTOR_SIZE > 0, "Flash sectors must have a positive size");
-STATIC_ASSERT(EXTERNAL_FLASH_BLOCK_SIZE > 0, "Flash blocks must have a positive size");
-STATIC_ASSERT(EXTERNAL_FLASH_BLOCK_SIZE % EXTERNAL_FLASH_SECTOR_SIZE == 0, "Flash blocks must contain whole sectors");
-STATIC_ASSERT(WEAR_LEVELING_EXTERNAL_FLASH_BLOCK_OFFSET >= 0, "Flash block offset cannot be negative");
-STATIC_ASSERT(WEAR_LEVELING_EXTERNAL_FLASH_BLOCK_COUNT > 0, "At least one flash block must be allocated");
-STATIC_ASSERT(WEAR_LEVELING_BACKING_SIZE > 0, "Flash backing store must have a positive size");
-STATIC_ASSERT(ERASE_SIZE <= (uint64_t)(WEAR_LEVELING_EXTERNAL_FLASH_BLOCK_COUNT) * (EXTERNAL_FLASH_BLOCK_SIZE), "Backing store exceeds its flash block allocation");
-STATIC_ASSERT(ERASE_START + ERASE_SIZE <= EXTERNAL_FLASH_SIZE, "Backing store exceeds the external flash");
-
 #ifndef WEAR_LEVELING_EXTERNAL_FLASH_BULK_COUNT
 #    define WEAR_LEVELING_EXTERNAL_FLASH_BULK_COUNT 32
 #endif // WEAR_LEVELING_EXTERNAL_FLASH_BULK_COUNT
@@ -41,18 +29,13 @@ bool backing_store_erase(void) {
     uint32_t start = timer_read32();
 #endif
 
-    bool     ret     = true;
-    uint32_t address = ERASE_START;
-    uint32_t end     = ERASE_START + WEAR_LEVELING_BACKING_SIZE;
-    while (address < end) {
-        // A backing store can use less than its allocated flash blocks.
-        bool           whole_block = address % EXTERNAL_FLASH_BLOCK_SIZE == 0 && end - address >= EXTERNAL_FLASH_BLOCK_SIZE;
-        flash_status_t status      = whole_block ? flash_erase_block(address) : flash_erase_sector(address);
+    bool ret = true;
+    for (int i = 0; i < (WEAR_LEVELING_EXTERNAL_FLASH_BLOCK_COUNT); ++i) {
+        flash_status_t status = flash_erase_block(((WEAR_LEVELING_EXTERNAL_FLASH_BLOCK_OFFSET) + i) * (EXTERNAL_FLASH_BLOCK_SIZE));
         if (status != FLASH_STATUS_SUCCESS) {
             ret = false;
             break;
         }
-        address += whole_block ? EXTERNAL_FLASH_BLOCK_SIZE : EXTERNAL_FLASH_SECTOR_SIZE;
     }
 
     bs_dprintf("Backing store erase took %ldms to complete\n", ((long)(timer_read32() - start)));
