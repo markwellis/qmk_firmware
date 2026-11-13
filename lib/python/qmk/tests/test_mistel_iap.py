@@ -151,6 +151,12 @@ class MistelIAPTest(unittest.TestCase):
             self.run_flash()
         self.assertNotIn((0x1D, 0), self.device.commands)
 
+    @unittest.skipUnless(mistel.os.name == 'posix', 'Directory sync is a POSIX operation.')
+    def test_directory_sync_failure_never_erases(self):
+        with patch.object(mistel.os, 'fsync', side_effect=[None, OSError('directory sync failed')]), self.assertRaises(OSError):
+            self.run_flash()
+        self.assertNotIn((0x1D, 0), self.device.commands)
+
     def test_checksum_failure_never_commits_or_boots(self):
         self.device.bad_checksum = True
         with self.assertRaisesRegex(RuntimeError, 'checksum'):

@@ -123,6 +123,12 @@ def _saved_version(device, info, product_id, backup):
             output.flush()
             os.fsync(output.fileno())
         os.replace(temporary, backup)
+        if os.name == 'posix':
+            directory = os.open(backup.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
