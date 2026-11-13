@@ -96,6 +96,7 @@ BOOTLOADER_VIDS_PIDS = {
     'gd32v-dfu': {("28e9", "0189")},
     'wb32-dfu': {("342d", "dfa0")},
     'at32-dfu': {("2e3c", "df11")},
+    'mistel-iap': {("04d9", "1419"), ("04d9", "141a")},
     'bootloadhid': {("16c0", "05df")},
     'usbasploader': {("16c0", "05dc")},
     'usbtinyisp': {("1782", "0c9f")},

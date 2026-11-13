@@ -498,3 +498,25 @@ CLI Flashing sequence:
 4. Wait for the keyboard to become available
 
 <sup>1</sup>: This works only if the controller has been flashed with QMK Firmware with `RP2040_BOOTLOADER_DOUBLE_TAP_RESET` defined.
+
+## Mistel MD770 RGB BT updater
+
+The wired MD770 RGB BT retains its factory USB updater. Flash each half
+separately, with the inter-half cable disconnected:
+
+```sh
+qmk flash path/to/application.bin
+```
+
+Only compatible MD770 application binaries are accepted. The half and
+update geometry are checked before erasing. A compatible image can enter
+the updater automatically from stock firmware; QMK firmware must first
+enter the updater using its bootloader shortcut or bootmagic key.
+
+The updater's version page shares the application erase window. Before
+writing, QMK saves this metadata beside the binary as
+`application.bin.iap-backup.json`, then restores and verifies it before
+starting the application. Keep that file until the keyboard works. If an
+update is interrupted, reconnect in updater mode and retry with the same
+binary path and metadata backup. No PCB bridge is required for normal
+updates. The factory bootloader and protection settings are preserved.
