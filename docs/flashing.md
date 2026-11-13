@@ -508,6 +508,9 @@ separately, with the inter-half cable disconnected:
 qmk flash path/to/application.bin
 ```
 
+Linux users need [QMK udev rules](faq_build#linux-udev-rules) including the
+MD770 application and updater IDs.
+
 Only compatible MD770 application binaries are accepted. The half and
 update geometry are checked before erasing. A compatible image can enter
 the updater automatically from stock firmware; QMK firmware must first
