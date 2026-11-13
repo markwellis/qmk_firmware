@@ -71,9 +71,14 @@ def _validate_image(image, product_id):
         raise ValueError('Mistel application is for a different half or bootloader.')
 
 
+def _read_image(filename):
+    image = Path(filename).read_bytes()
+    return image + b'\xff' * (-len(image) % 4)
+
+
 def supports_image(filename):
     """Recognise the application compatibility record before stock-device discovery."""
-    image = Path(filename).read_bytes()
+    image = _read_image(filename)
     for product in APPLICATIONS:
         try:
             _validate_image(image, product)
@@ -175,7 +180,7 @@ def _program(device, image, version):
 def flash(filename, selected):
     """Validate and install one MD770 application, preserving the stock updater."""
     filename = Path(filename)
-    image = filename.read_bytes()
+    image = _read_image(filename)
     product_id = selected['product_id'] & ~0x1000
     _validate_image(image, product_id)
     device = hid.Device(path=selected['path'])
