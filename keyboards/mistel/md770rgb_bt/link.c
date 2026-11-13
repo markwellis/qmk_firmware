@@ -8,9 +8,9 @@ static md770_parser_t parser;
 static uint32_t       last_sent;
 static uint32_t       last_received;
 #ifdef MD770_LEFT
-static bool received_rgb;
+static bool    received_rgb;
 static uint8_t sent_keys[8];
-static bool sent_keys_valid;
+static bool    sent_keys_valid;
 #endif
 static const SerialConfig serial_config = {.speed = 500000};
 

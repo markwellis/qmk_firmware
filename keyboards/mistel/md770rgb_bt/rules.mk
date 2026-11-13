@@ -7,4 +7,4 @@ MCU_STARTUP = ht32f523xx
 SRC += scan.c link.c protocol.c rgb.c
 ADEFS += -DCRT0_VTOR_INIT=1
 OPT_DEFS += -DCRT0_AREAS_NUMBER=1
-PROGRAM_CMD = $(QMK_BIN) flash $(BUILD_DIR)/$(TARGET).bin
+PROGRAM_CMD = $(QMK_BIN) flash $(TARGET).bin

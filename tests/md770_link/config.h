@@ -20,16 +20,20 @@
 #define chSysLock() ((void)0)
 #define chSysUnlock() ((void)0)
 typedef int msg_t;
-typedef struct { unsigned speed; } SerialConfig;
-typedef struct { unsigned oqueue; } SerialDriver;
+typedef struct {
+    unsigned speed;
+} SerialConfig;
+typedef struct {
+    unsigned oqueue;
+} SerialDriver;
 #ifdef __cplusplus
 extern "C" {
 #endif
 extern SerialDriver SD0;
-void sdStart(SerialDriver *driver, const SerialConfig *config);
-msg_t sdGetTimeout(SerialDriver *driver, unsigned timeout);
-size_t oqGetEmptyI(unsigned *queue);
-size_t sdWriteTimeout(SerialDriver *driver, const uint8_t *data, size_t length, unsigned timeout);
+void                sdStart(SerialDriver *driver, const SerialConfig *config);
+msg_t               sdGetTimeout(SerialDriver *driver, unsigned timeout);
+size_t              oqGetEmptyI(unsigned *queue);
+size_t              sdWriteTimeout(SerialDriver *driver, const uint8_t *data, size_t length, unsigned timeout);
 
 #ifdef __cplusplus
 }

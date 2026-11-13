@@ -25,7 +25,8 @@ its retained USB updater automatically. From QMK, use one of the bootloader
 shortcuts below before flashing. Connect only the half being flashed.
 
 The native Mistel flasher checks that the image matches the connected half,
-saves updater metadata beside the build binary as `*.bin.iap-backup.json`,
+saves updater metadata beside the copied binary in the QMK root as
+`*.bin.iap-backup.json`,
 then verifies the application and restored metadata. Keep that backup until
 the keyboard works. If interrupted, reconnect in updater mode and retry the
 same command with the same backup. Normal flashing preserves the factory
