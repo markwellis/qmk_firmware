@@ -5,9 +5,6 @@ import os
 import signal
 
 import usb.core
-import hid
-
-from qmk import bootloader_mistel
 
 from qmk.constants import BOOTLOADER_VIDS_PIDS
 from milc import cli
@@ -78,16 +75,11 @@ def _find_uf2_devices():
     return cli.run(['util/uf2conv.py', '--list']).stdout.splitlines()
 
 
-def _find_bootloader(mistel_application=False):
+def _find_bootloader():
     # To avoid running forever in the background, only look for bootloaders for 10min
     start_time = time.time()
     while time.time() - start_time < 600:
         for bl in BOOTLOADER_VIDS_PIDS:
-            if bl == 'mistel-iap':
-                device = bootloader_mistel.find_device(include_application=mistel_application)
-                if device:
-                    return (bl, device)
-                continue
             for vid, pid in BOOTLOADER_VIDS_PIDS[bl]:
                 vid_hex = int(f'0x{vid}', 0)
                 pid_hex = int(f'0x{pid}', 0)
@@ -220,29 +212,10 @@ def _flash_uf2(file):
     cli.run(['util/uf2conv.py', '--deploy', file], capture_output=False)
 
 
-def _flash_mistel(file, details):
-    try:
-        bootloader_mistel.flash(file, details)
-    except (OSError, ValueError, RuntimeError, hid.HIDException) as error:
-        return (True, str(error))
-    except KeyboardInterrupt:
-        return (True, 'Mistel programming interrupted; keep the updater metadata backup before retrying.')
-    return (False, None)
-
-
 def flasher(mcu, file):
     # Avoid "expected string or bytes-like object, got 'WindowsPath" issues
     file = file.as_posix()
-    try:
-        bl, details = _find_bootloader(mistel_application=bootloader_mistel.supports_image(file))
-    except (OSError, ValueError, hid.HIDException) as error:
-        return (True, str(error))
-    if bl == 'mistel-iap':
-        return _flash_mistel(file, details)
-    return _flash_known_bootloader(mcu, file, bl, details)
-
-
-def _flash_known_bootloader(mcu, file, bl, details):
+    bl, details = _find_bootloader()
     # Add a small sleep to avoid race conditions
     time.sleep(1)
     if bl == 'atmel-dfu':
