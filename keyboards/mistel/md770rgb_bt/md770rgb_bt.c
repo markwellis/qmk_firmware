@@ -21,7 +21,7 @@ bool matrix_scan_custom(matrix_row_t rows[MATRIX_ROWS]) {
     memcpy(rows + 8, local, sizeof(local));
 #else
     memcpy(rows, local, sizeof(local));
-    rows[7] = (uint8_t)~local[7] & 0x0f;
+    rows[7] = local[7] & 0x0f;
 #endif
     md770_link_task(rows);
     return memcmp(previous, rows, sizeof(previous)) != 0;
