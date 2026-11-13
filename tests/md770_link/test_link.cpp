@@ -11,14 +11,18 @@ extern "C" {
 SerialDriver SD0;
 }
 
-static size_t space = MD770_FRAME_MAX;
+static size_t                              space = MD770_FRAME_MAX;
 static std::vector<std::array<uint8_t, 8>> snapshots;
 extern "C" {
-void sdStart(SerialDriver *, const SerialConfig *) {}
-msg_t sdGetTimeout(SerialDriver *, unsigned) { return -1; }
-size_t oqGetEmptyI(unsigned *) { return space; }
+void  sdStart(SerialDriver *, const SerialConfig *) {}
+msg_t sdGetTimeout(SerialDriver *, unsigned) {
+    return -1;
+}
+size_t oqGetEmptyI(unsigned *) {
+    return space;
+}
 size_t sdWriteTimeout(SerialDriver *, const uint8_t *data, size_t length, unsigned) {
-    md770_parser_t parser{};
+    md770_parser_t         parser{};
     std::array<uint8_t, 8> keys{};
     for (size_t i = 0; i < length; ++i) {
         if (md770_receive(&parser, data[i], keys.data(), keys.size())) snapshots.push_back(keys);
