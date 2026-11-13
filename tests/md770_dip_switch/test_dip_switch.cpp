@@ -3,8 +3,13 @@
 #include "gtest/gtest.h"
 extern "C" {
 #include "quantum.h"
+#include "keyboards/mistel/md770rgb_bt/md770rgb_bt.h"
 #include "keycode_config.h"
 #include "keyboards/mistel/md770rgb_bt/keymaps/default/keymap.h"
+
+void md770_set_layer_led(uint8_t colour) {
+    (void)colour;
+}
 
 // The native test matrix has no separate raw snapshot.
 bool peek_matrix(uint8_t row, uint8_t col, bool) {
@@ -110,4 +115,40 @@ TEST_F(MD770DipSwitch, LayoutCycleUsesPersistentQmkDefaultLayers) {
     record.event.pressed = false;
     EXPECT_FALSE(process_record_user(MD770_NEXT_LAYOUT, &record));
     EXPECT_EQ(default_layer_state, 1UL << BASE);
+}
+
+TEST_F(MD770DipSwitch, LayoutCyclingPreservesTheSelectedProfile) {
+    default_layer_set((1UL << BASE) | (1UL << PROFILE2));
+    keyrecord_t record   = {};
+    record.event.pressed = true;
+    EXPECT_FALSE(process_record_user(MD770_NEXT_LAYOUT, &record));
+    EXPECT_EQ(default_layer_state, (1UL << COLEMAK) | (1UL << PROFILE2));
+    EXPECT_EQ(eeconfig_read_default_layer(), default_layer_state);
+    process_record_user(MD770_NEXT_LAYOUT, &record);
+    EXPECT_EQ(default_layer_state, (1UL << DVORAK) | (1UL << PROFILE2));
+    process_record_user(MD770_NEXT_LAYOUT, &record);
+    EXPECT_EQ(default_layer_state, (1UL << BASE) | (1UL << PROFILE2));
+}
+
+TEST_F(MD770DipSwitch, ProfileSelectionPreservesTheLayoutAndTransientLayers) {
+    default_layer_set(1UL << DVORAK);
+    layer_state_set((1UL << FN) | (1UL << PN));
+    keyrecord_t record   = {};
+    record.event.pressed = true;
+    for (uint16_t code = MD770_PROFILE1; code <= MD770_PROFILE3; ++code) {
+        EXPECT_FALSE(process_record_user(code, &record));
+        EXPECT_EQ(default_layer_state, (1UL << DVORAK) | (1UL << (PROFILE1 + code - MD770_PROFILE1)));
+        EXPECT_EQ(eeconfig_read_default_layer(), default_layer_state);
+        EXPECT_TRUE(layer_state_is(FN));
+        EXPECT_TRUE(layer_state_is(PN));
+    }
+    EXPECT_FALSE(process_record_user(MD770_PROFILE0, &record));
+    EXPECT_EQ(default_layer_state, 1UL << DVORAK);
+}
+
+TEST_F(MD770DipSwitch, ProfileReleaseDoesNotChangeTheSelection) {
+    default_layer_set((1UL << BASE) | (1UL << PROFILE1));
+    keyrecord_t record = {};
+    EXPECT_FALSE(process_record_user(MD770_PROFILE3, &record));
+    EXPECT_EQ(default_layer_state, (1UL << BASE) | (1UL << PROFILE1));
 }

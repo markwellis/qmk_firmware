@@ -4,9 +4,12 @@
 #include "protocol.h"
 #include <string.h>
 
-static md770_parser_t     parser;
-static uint32_t           last_sent;
-static uint32_t           last_received;
+static md770_parser_t parser;
+static uint32_t       last_sent;
+static uint32_t       last_received;
+#ifdef MD770_LEFT
+static bool received_rgb;
+#endif
 static const SerialConfig serial_config = {.speed = 500000};
 
 void md770_link_init(void) {
@@ -34,6 +37,7 @@ void md770_link_task(matrix_row_t rows[MATRIX_ROWS]) {
             last_received = timer_read32();
 #ifdef MD770_LEFT
             md770_rgb_receive(payload);
+            received_rgb = true;
 #else
             for (uint8_t i = 0; i < 8; ++i) {
                 rows[8 + i] = (uint8_t)~payload[i];
@@ -41,7 +45,13 @@ void md770_link_task(matrix_row_t rows[MATRIX_ROWS]) {
 #endif
         }
     }
-#ifndef MD770_LEFT
+#ifdef MD770_LEFT
+    if (received_rgb && timer_elapsed32(last_received) >= 100) {
+        static const uint8_t off[126] = {0};
+        md770_rgb_receive(off);
+        received_rgb = false;
+    }
+#else
     if (timer_elapsed32(last_received) >= 100) {
         memset(rows + 8, 0, 8 * sizeof(matrix_row_t));
     }

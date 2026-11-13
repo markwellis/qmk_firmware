@@ -8,7 +8,7 @@ A wired port for the US-layout MD770 RGB BT. Bluetooth and the vendor's on-keybo
 * Hardware Supported: MD770BT-M, US 85-key layout, HT32F52352
 * Hardware Availability: [Mistel](https://www.mistelkeyboard.com/)
 
-Initial tests with RGB Matrix disabled have passed USB installation, basic typing and cold reconnect on both halves, plus split typing and reconnect. RGB, full key coverage, the remaining DIP functions and settings persistence still need hardware validation. The current ChibiOS dependency needs an HT32 reset-controller correction before building. See the separate [development and recovery notes](https://github.com/markwellis/md770-qmk-firmware-stuff/blob/main/docs/qmk-upstream-readiness.md) for that prerequisite.
+Initial tests with RGB Matrix disabled have passed USB installation, basic typing and cold reconnect on both halves, plus split typing and reconnect. RGB, status indicators, profile controls, full key coverage, the remaining DIP functions and settings persistence still need hardware validation. The current ChibiOS dependency needs an HT32 reset-controller correction before building. See the separate [development and recovery notes](https://github.com/markwellis/md770-qmk-firmware-stuff/blob/main/docs/qmk-upstream-readiness.md) for that prerequisite.
 
 Build each half from the QMK root:
 
@@ -17,11 +17,13 @@ Build each half from the QMK root:
 
 The right half is the USB master. The left half can also report its local keys over USB when used independently. Both halves use the keyboard's UART protocol; operation with mixed QMK and vendor firmware has not been tested.
 
-QMK settings use the external SPI flash and replace the vendor global-settings sector. Back up any vendor settings you need before using the port.
+QMK settings on the right use external SPI flash at `0x0000`–`0x1fff`, replacing the vendor global-settings sector and first profile sector. Back up any vendor settings you need before using the port. Clear QMK settings when changing the layer or storage layout. Standalone left-half settings are transient.
 
 The default keymap keeps the factory Fn media/navigation shortcuts and Pn lighting controls. Pn+Escape selects a colour, Pn+F5 advances the effect, Pn+0 turns lighting off, Pn+Up/Down changes brightness and Pn+Left/Right changes speed. Pn+F6/F7/F8 adjusts red/green/blue. Lighting defaults off; effects use QMK RGB Matrix.
 
-Pn+Quote cycles QWERTY, Colemak and Dvorak. Pn+Left GUI toggles GUI lock. Custom mappings and macros use QMK or VIA.
+Pn+Quote cycles QWERTY, Colemak and Dvorak. Pn+Left GUI toggles GUI lock. Pn+M selects the default profile; Pn+comma, Pn+dot and Pn+slash select three programmable QMK profile layers. The selected base layout and profile persist independently. The layer indicator is off, red, green or blue respectively. Fn+R held for one second resets the selected profile's dynamic key assignments after all keys are released. Hold both physical Alt keys for one second to reset all QMK settings and reboot.
+
+Pn+F9 enters per-key colour editing and lights the layer indicator white. Select a colour with Pn+Escape or Pn+F6/F7/F8, then tap ordinary keys to paint them; tapping with the same colour again clears a key. Ordinary typing is suppressed while editing; Fn and Pn remain controls. Pn+F9 saves and exits; Pn+F10 shows the saved colours. Pn+F5 also selects native QMK effects, including a WASD/arrow-key effect. Lighting sleeps with the USB host. The Caps Lock indicator follows the host independently of RGB Matrix.
 
 The right-half DIP switches retain their factory functions:
 

@@ -28,13 +28,16 @@
             "cycle_spiral": true,
             "raindrops": true,
             "solid_reactive": true,
-            "splash": true
+            "splash": true,
+            "riverflow": true,
+            "cycle_pinwheel": true
         },
         "default": {
             "on": false,
             "val": 64
         },
         "driver": "custom",
+        "sleep": true,
         "layout": [
             {"matrix": [15, 0], "x": 0, "y": 0, "flags": 4},
             {"matrix": [14, 0], "x": 15, "y": 0, "flags": 4},

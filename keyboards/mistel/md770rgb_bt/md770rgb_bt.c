@@ -27,11 +27,25 @@ bool matrix_scan_custom(matrix_row_t rows[MATRIX_ROWS]) {
     return memcmp(previous, rows, sizeof(previous)) != 0;
 }
 
-void bootloader_jump(void) {
+static void reset_with_request(uint32_t request) {
     usbDisconnectBus(&USBD1);
     wait_ms(30);
     chSysDisable();
-    *MD770_BOOT_REQUEST = MD770_BOOT_REQUEST_IAP;
+    *MD770_BOOT_REQUEST = request;
     __DSB();
     NVIC_SystemReset();
 }
+
+void bootloader_jump(void) {
+    reset_with_request(MD770_BOOT_REQUEST_IAP);
+}
+
+void mcu_reset(void) {
+    reset_with_request(0);
+}
+
+#ifdef MD770_LEFT
+void md770_set_layer_led(uint8_t colour) {
+    (void)colour;
+}
+#endif

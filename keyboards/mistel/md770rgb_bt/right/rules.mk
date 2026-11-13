@@ -1,1 +1,1 @@
-SRC += storage.c
+SRC += storage.c indicators.c
