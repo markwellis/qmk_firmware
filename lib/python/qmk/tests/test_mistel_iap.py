@@ -131,6 +131,15 @@ class MistelIAPTest(unittest.TestCase):
         self.assertIn((0x11, 0), self.device.commands)
         self.assertTrue(self.device.started)
 
+    def test_binary_tail_is_padded_to_the_updaters_word_boundary(self):
+        self.image.write_bytes(application() + b'\x12\x34')
+        self.assertTrue(mistel.supports_image(self.image))
+        self.run_flash()
+        self.assertTrue(self.device.started)
+        encoded_tail = self.device.memory[0x1200:0x1204]
+        expected = bytes(value ^ mistel.XOR_KEY[index % 52] for index, value in enumerate(application() + b'\x12\x34\xff\xff'))[-4:]
+        self.assertEqual(encoded_tail, expected)
+
     def test_left_half_requires_a_left_application(self):
         self.device = Updater(0x041A)
         with self.assertRaisesRegex(ValueError, 'different half'):
