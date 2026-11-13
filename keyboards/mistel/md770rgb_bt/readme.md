@@ -8,7 +8,7 @@ A wired port for the US-layout MD770 RGB BT. Bluetooth and the vendor's on-keybo
 * Hardware Supported: MD770BT-M, US 85-key layout, HT32F52352
 * Hardware Availability: [Mistel](https://www.mistelkeyboard.com/)
 
-Both halves have passed USB installation, basic typing and split reconnect tests. The RGB-enabled build also passed paired typing, Caps Lock and profile indicators, animated lighting and lighting on/off across both halves. Per-key colours, settings persistence, reset controls, full key coverage, remaining DIP combinations and suspend/wake still need hardware validation. The current ChibiOS dependency needs an HT32 reset-controller correction before building. See the separate [development and recovery notes](https://github.com/markwellis/md770-qmk-firmware-stuff/blob/main/docs/qmk-upstream-readiness.md) for that prerequisite.
+Both halves have passed USB installation, basic typing and split reconnect tests. The RGB-enabled build also passed paired typing, Caps Lock and profile indicators, animated lighting and lighting on/off across both halves. The corrected right build passed factory reset and saved profile, per-key colour and lighting-state persistence across cold reconnect. Full key coverage, remaining DIP combinations and suspend/wake still need hardware validation. The current ChibiOS dependency needs an HT32 reset-controller correction before building. See the separate [development and recovery notes](https://github.com/markwellis/md770-qmk-firmware-stuff/blob/main/docs/qmk-upstream-readiness.md) for that prerequisite.
 
 Build each half from the QMK root:
 
