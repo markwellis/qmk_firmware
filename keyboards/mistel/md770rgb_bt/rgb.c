@@ -1,47 +1,52 @@
 // Copyright 2026 Mark Ellis (@markwellis)
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "md770.h"
-#include "raw_hid.h"
-#include "rgb_data.h"
-#ifdef VIA_ENABLE
-#    include "via.h"
-#endif
+#include "md770rgb_bt.h"
 #include <string.h>
 
 #ifdef MD770_LEFT
 #    define LED_CLOCK A14
 #    define LED_LATCH A15
-#    define CHANNELS 16
-#    define ROW_SHIFT 0
+#    define LED_CHANNELS 16
+#    define LED_ROW_SHIFT 0
 #else
 #    define LED_CLOCK C15
 #    define LED_LATCH B10
-#    define CHANNELS 32
-#    define ROW_SHIFT 1
+#    define LED_CHANNELS 32
+#    define LED_ROW_SHIFT 1
 #endif
 #define LED_DATA C12
+#define UNUSED_SLOT UINT8_MAX
+
+// Slot order is shared with the inter-half RGB protocol.
+#ifdef RGB_MATRIX_ENABLE
+static const uint8_t led_to_slot[] = {0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 1, 7, 13, 19, 25, 31, 37, 43, 49, 55, 61, 67, 73, 79, 91, 2, 8, 14, 20, 26, 32, 38, 44, 50, 56, 62, 68, 74, 86, 92, 3, 9, 15, 21, 27, 33, 39, 45, 51, 57, 63, 69, 81, 93, 4, 16, 22, 28, 34, 40, 46, 52, 58, 64, 70, 82, 88, 94, 5, 11, 23, 35, 47, 65, 71, 77, 83, 89, 95};
+STATIC_ASSERT(ARRAY_SIZE(led_to_slot) == RGB_MATRIX_LED_COUNT, "RGB slot map must cover every LED");
+#endif
+
+#ifdef MD770_LEFT
+static const uint8_t scan_row_slots[8][5] = {
+    {0, 6, 12, 18, 24}, {30, 36, UNUSED_SLOT, UNUSED_SLOT, UNUSED_SLOT}, {1, 2, 3, 4, 5}, {7, 8, 9, 16, 11}, {13, 14, 15, 22, 17}, {19, 20, 21, 28, 35}, {25, 26, 27, 34, 23}, {31, 32, 33, 40, 37},
+};
+#else
+static const uint8_t scan_row_slots[8][7] = {
+    {92, 38, 39, 46, 47, 42, 35}, {43, 44, 45, 52, 65, 48, 47}, {49, 50, 51, 58, 71, 54, 90}, {55, 56, 57, 64, 83, 60, 75}, {61, 62, 63, 70, 77, 66, UNUSED_SLOT}, {67, 68, 69, 82, 88, 72, UNUSED_SLOT}, {73, 74, 81, 95, 91, 78, UNUSED_SLOT}, {79, 86, 89, 93, 94, 84, UNUSED_SLOT},
+};
+#endif
 
 static uint8_t          colours[MD770_RGB_SLOTS][3];
 static uint8_t          wire_colours[MD770_RGB_SLOTS][3];
-static uint16_t         channels[2][8][CHANNELS];
+static uint16_t         pwm_buffers[2][8][LED_CHANNELS];
 static volatile uint8_t active_buffer;
 static uint8_t          row;
 static uint8_t          startup_count = 255;
 static bool             initialised;
-static struct {
-    uint32_t started;
-    uint32_t duration;
-    uint16_t on_ms;
-    uint16_t off_ms;
-    uint8_t  colour[3];
-    bool     active;
-    bool     on;
-} alert;
+
+static void publish(void);
 
 static void clock_bit(bool high) {
-    palClearLine(LED_CLOCK);
-    palWriteLine(LED_DATA, high);
-    palSetLine(LED_CLOCK);
+    gpio_write_pin_low(LED_CLOCK);
+    gpio_write_pin(LED_DATA, high);
+    gpio_write_pin_high(LED_CLOCK);
 }
 
 static void shift_bits(uint16_t value, uint8_t count) {
@@ -52,13 +57,13 @@ static void shift_bits(uint16_t value, uint8_t count) {
 }
 
 static void control_clocks(uint8_t count) {
-    palClearLine(LED_LATCH);
-    palSetLine(LED_LATCH);
+    gpio_write_pin_low(LED_LATCH);
+    gpio_write_pin_high(LED_LATCH);
     for (uint8_t i = 0; i < count; ++i) {
-        palClearLine(LED_CLOCK);
-        palSetLine(LED_CLOCK);
+        gpio_write_pin_low(LED_CLOCK);
+        gpio_write_pin_high(LED_CLOCK);
     }
-    palClearLine(LED_LATCH);
+    gpio_write_pin_low(LED_LATCH);
 }
 
 static void shift_row(uint8_t index) {
@@ -68,16 +73,16 @@ static void shift_row(uint8_t index) {
         shift_bits(0x0300, 10);
 #endif
         shift_bits(0, 2);
-        palClearLine(LED_CLOCK);
-        palSetLine(LED_LATCH);
+        gpio_write_pin_low(LED_CLOCK);
+        gpio_write_pin_high(LED_LATCH);
         shift_bits(0x0c00, 8);
-        palSetLine(LED_DATA);
-        palClearLine(LED_LATCH);
-        palSetLine(LED_LATCH);
+        gpio_write_pin_high(LED_DATA);
+        gpio_write_pin_low(LED_LATCH);
+        gpio_write_pin_high(LED_LATCH);
     }
-    const uint16_t *values = channels[active_buffer][index];
+    const uint16_t *values = pwm_buffers[active_buffer][index];
     for (uint8_t group = 0; group < 16; ++group) {
-        palClearLine(LED_LATCH);
+        gpio_write_pin_low(LED_LATCH);
 #ifndef MD770_LEFT
         shift_bits(values[31 - 2 * group], 10);
         uint16_t value = values[30 - 2 * group];
@@ -85,21 +90,21 @@ static void shift_row(uint8_t index) {
         uint16_t value = values[15 - group];
 #endif
         shift_bits(value, 9);
-        palClearLine(LED_CLOCK);
-        palSetLine(LED_LATCH);
-        palWriteLine(LED_DATA, (value & 0x0040) != 0);
-        palSetLine(LED_CLOCK);
+        gpio_write_pin_low(LED_CLOCK);
+        gpio_write_pin_high(LED_LATCH);
+        gpio_write_pin(LED_DATA, (value & 0x0040) != 0);
+        gpio_write_pin_high(LED_CLOCK);
     }
-    palSetLine(LED_DATA);
+    gpio_write_pin_high(LED_DATA);
 }
 
 void md770_rgb_latch(void) {
     control_clocks(2);
-    palSetLine(LED_LATCH);
+    gpio_write_pin_high(LED_LATCH);
 }
 
 void md770_rgb_update(void) {
-    GPIOA->SRR = 1U << (row + ROW_SHIFT);
+    gpio_write_pin_high(PAL_LINE(GPIOA, row + LED_ROW_SHIFT));
     GPTM1->CTR = 1;
     row        = (row + 1) & 7;
     shift_row(row);
@@ -110,9 +115,9 @@ void md770_rgb_init(void) {
         return;
     }
     initialised = true;
-    palSetLineMode(LED_DATA, PAL_MODE_OUTPUT_PUSHPULL);
-    palSetLineMode(LED_CLOCK, PAL_MODE_OUTPUT_PUSHPULL);
-    palSetLineMode(LED_LATCH, PAL_MODE_OUTPUT_PUSHPULL);
+    gpio_set_pin_output(LED_DATA);
+    gpio_set_pin_output(LED_CLOCK);
+    gpio_set_pin_output(LED_LATCH);
     palSetLineMode(C10, PAL_MODE_HT32_AF(4) | PAL_MODE_OUTPUT_PUSHPULL);
     CKCU->APBCCR1 |= CKCU_APBCCR1_GPTM1EN;
     GPTM1->CTR        = 0;
@@ -128,39 +133,37 @@ void md770_rgb_init(void) {
     GPTM1->CRR        = 2;
     GPTM1->CHnCCR[0]  = 1;
     wait_ms(10);
-    palClearLine(C11);
+    gpio_write_pin_low(C11);
     wait_us(100);
+    publish();
     shift_row(0);
 }
 
 static void publish(void) {
     uint8_t next = active_buffer ^ 1;
-    memset(channels[next], 0, sizeof(channels[next]));
-    for (uint8_t slot = 0; slot < MD770_RGB_SLOTS; ++slot) {
-        for (uint8_t component = 0; component < 3; ++component) {
-            wire_colours[slot][component] = alert.active ? (alert.on ? alert.colour[component] : 0) : colours[slot][component];
-        }
-    }
+    memset(pwm_buffers[next], 0, sizeof(pwm_buffers[next]));
+    memcpy(wire_colours, colours, sizeof(wire_colours));
+    // RGB Matrix already applies its lightness curve.
     for (uint8_t r = 0; r < 8; ++r) {
 #ifdef MD770_LEFT
         for (uint8_t key = 0; key < 5; ++key) {
-            uint8_t slot = hardware_slots[r][key];
-            if (slot != 0xff) {
+            uint8_t slot = scan_row_slots[r][key];
+            if (slot != UNUSED_SLOT) {
                 for (uint8_t component = 0; component < 3; ++component) {
-                    channels[next][r][component * 5 + key] = intensity[wire_colours[slot][component]];
+                    pwm_buffers[next][r][component * 5 + key] = (uint16_t)wire_colours[slot][component] * (UINT16_MAX / UINT8_MAX);
                 }
             }
         }
 #else
         for (uint8_t key = 0; key < 7; ++key) {
-            uint8_t slot = hardware_slots[r][key];
-            if (slot != 0xff) {
+            uint8_t slot = scan_row_slots[r][key];
+            if (slot != UNUSED_SLOT) {
                 for (uint8_t component = 0; component < 3; ++component) {
                     uint8_t offset = 2 * key + 14 * component;
                     if (offset >= 32) {
                         offset -= 31;
                     }
-                    channels[next][r][offset] = intensity[wire_colours[slot][component]];
+                    pwm_buffers[next][r][offset] = (uint16_t)wire_colours[slot][component] * (UINT16_MAX / UINT8_MAX);
                 }
             }
         }
@@ -171,14 +174,15 @@ static void publish(void) {
     chSysUnlock();
 }
 
+#ifdef RGB_MATRIX_ENABLE
 static void set_colour(int index, uint8_t red, uint8_t green, uint8_t blue) {
-#ifdef MD770_LEFT
-    if (palReadLine(B8)) {
+#    ifdef MD770_LEFT
+    if (gpio_read_pin(B8)) {
         return;
     }
-#endif
+#    endif
     if ((unsigned)index < RGB_MATRIX_LED_COUNT) {
-        uint8_t slot     = led_slots[index];
+        uint8_t slot     = led_to_slot[index];
         colours[slot][0] = red;
         colours[slot][1] = green;
         colours[slot][2] = blue;
@@ -192,11 +196,11 @@ static void set_all(uint8_t red, uint8_t green, uint8_t blue) {
 }
 
 static void flush(void) {
-#ifdef MD770_LEFT
-    if (palReadLine(B8)) {
+#    ifdef MD770_LEFT
+    if (gpio_read_pin(B8)) {
         return;
     }
-#endif
+#    endif
     publish();
 }
 
@@ -206,6 +210,7 @@ const rgb_matrix_driver_t rgb_matrix_driver = {
     .set_color     = set_colour,
     .set_color_all = set_all,
 };
+#endif
 
 const uint8_t *md770_rgb_left(void) {
     return &wire_colours[0][0];
@@ -219,62 +224,3 @@ void md770_rgb_receive(const uint8_t *payload) {
     (void)payload;
 #endif
 }
-
-void md770_rgb_task(void) {
-    if (!alert.active) {
-        return;
-    }
-    uint32_t elapsed = timer_elapsed32(alert.started);
-    bool     on      = elapsed % ((uint32_t)alert.on_ms + alert.off_ms) < alert.on_ms;
-    if (elapsed >= alert.duration) {
-        alert.active = false;
-        publish();
-    } else if (on != alert.on) {
-        alert.on = on;
-        publish();
-    }
-}
-
-static bool alert_command(const uint8_t *data, uint8_t length) {
-    if (length < 14 || memcmp(data, "MD77", 4) != 0) {
-        return false;
-    }
-    if (data[4] == 0) {
-        alert.active = false;
-        publish();
-    } else if (data[4] == 1) {
-        uint16_t on_ms  = data[8] | (uint16_t)data[9] << 8;
-        uint16_t off_ms = data[10] | (uint16_t)data[11] << 8;
-        uint16_t cycles = data[12] | (uint16_t)data[13] << 8;
-        uint32_t period = (uint32_t)on_ms + off_ms;
-        if (!on_ms || !off_ms || !cycles || cycles > 60000 / period) {
-            return false;
-        }
-        uint32_t duration = period * cycles;
-        alert.started     = timer_read32();
-        alert.duration    = duration;
-        alert.on_ms       = on_ms;
-        alert.off_ms      = off_ms;
-        alert.colour[0]   = MIN(data[5], RGB_MATRIX_MAXIMUM_BRIGHTNESS);
-        alert.colour[1]   = MIN(data[6], RGB_MATRIX_MAXIMUM_BRIGHTNESS);
-        alert.colour[2]   = MIN(data[7], RGB_MATRIX_MAXIMUM_BRIGHTNESS);
-        alert.active      = true;
-        alert.on          = true;
-        publish();
-    } else {
-        return false;
-    }
-    return true;
-}
-
-#ifdef VIA_ENABLE
-void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
-    if (length < 2 || data[0] != id_custom_set_value || data[1] != id_custom_channel || !alert_command(data + 2, length - 2)) {
-        data[0] = id_unhandled;
-    }
-}
-#else
-void raw_hid_receive(uint8_t *data, uint8_t length) {
-    alert_command(data, length);
-}
-#endif

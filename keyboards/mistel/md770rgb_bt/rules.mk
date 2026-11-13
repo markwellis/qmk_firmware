@@ -1,13 +1,9 @@
-MCU = cortex-m0plus
 ARMV = 6
 USE_FPU = no
 MCU_FAMILY = HT32
 MCU_SERIES = HT32F523xx
-MCU_LDSCRIPT = HT32F52352_MD770
+MCU_LDSCRIPT = ht32f52352_md770
 MCU_STARTUP = ht32f523xx
-BOARD = MD770
-BOOTLOADER = custom
-CUSTOM_MATRIX = lite
-SRC += md770.c scan.c link.c protocol.c rgb.c
+SRC += scan.c link.c protocol.c rgb.c
 ADEFS += -DCRT0_VTOR_INIT=1
 OPT_DEFS += -DCRT0_AREAS_NUMBER=1

@@ -1,6 +1,7 @@
 // Copyright 2026 Mark Ellis (@markwellis)
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include "hal.h"
+#include "gpio.h"
 
 const PALConfig pal_default_config = {
     .setup =
@@ -13,7 +14,7 @@ const PALConfig pal_default_config = {
 };
 
 void __early_init(void) {
-    WDT->CR = 0x5fa00001;
+    WDT->CR = MD770_WATCHDOG_RELOAD;
     CKCU->GCCR |= CKCU_GCCR_HSIEN;
     while (!(CKCU->GCSR & CKCU_GCSR_HSIRDY)) {
     }
@@ -33,6 +34,6 @@ void __early_init(void) {
 
 void boardInit(void) {
     CKCU->HSICR = (CKCU->HSICR & ~0x30U) | 0x23U;
-    palSetPad(GPIOC, 11);
-    palSetPadMode(GPIOC, 11, PAL_MODE_OUTPUT_PUSHPULL);
+    gpio_write_pin_high(C11);
+    gpio_set_pin_output(C11);
 }

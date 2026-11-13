@@ -1,2 +1,0 @@
-BOARDSRC = $(BOARD_PATH)/boards/MD770/board.c
-BOARDINC = $(BOARD_PATH)/boards/MD770

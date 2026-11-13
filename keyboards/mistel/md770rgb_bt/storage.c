@@ -9,8 +9,8 @@ void spi_init(void) {
         return;
     }
     initialised = true;
-    palSetLine(A9);
-    palSetLineMode(A9, PAL_MODE_OUTPUT_PUSHPULL);
+    gpio_write_pin_high(A9);
+    gpio_set_pin_output(A9);
     palSetLineMode(C2, SPI_SCK_FLAGS);
     palSetLineMode(C3, SPI_MOSI_FLAGS);
     palSetLineMode(B6, SPI_MISO_FLAGS);

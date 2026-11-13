@@ -1,4 +1,24 @@
 {
+    "bootmagic": {
+        "matrix": [1, 5]
+    },
+    "dip_switch": {
+        "enabled": true,
+        "matrix_grid": [
+            [7, 0],
+            [7, 1],
+            [7, 2],
+            [7, 3]
+        ]
+    },
+    "eeprom": {
+        "driver": "wear_leveling",
+        "wear_leveling": {
+            "backing_size": 4096,
+            "driver": "spi_flash",
+            "logical_size": 2048
+        }
+    },
     "usb": {
         "pid": "0x0419"
     }

@@ -8,4 +8,4 @@
 
 // The retained IAP can leave the watchdog running during flash initialisation.
 #undef CH_CFG_SYSTEM_TICK_HOOK
-#define CH_CFG_SYSTEM_TICK_HOOK() (*(volatile uint32_t *)0x40068000U = 0x5fa00001U)
+#define CH_CFG_SYSTEM_TICK_HOOK() (*(volatile uint32_t *)0x40068000U = MD770_WATCHDOG_RELOAD)

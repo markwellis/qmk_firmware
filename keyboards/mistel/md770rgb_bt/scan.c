@@ -1,6 +1,6 @@
 // Copyright 2026 Mark Ellis (@markwellis)
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "md770.h"
+#include "md770rgb_bt.h"
 #include <string.h>
 
 #ifdef MD770_LEFT
@@ -16,6 +16,7 @@ static volatile matrix_row_t scanned[8];
 
 static void scan_tick(GPTDriver *driver) {
     (void)driver;
+    // Matrix inputs share GPIOA with the strobed LED rows.
     GPIOA->RR   = SENSE_MASK;
     GPTM1->CTR  = 0;
     GPTM1->CNTR = 0;
@@ -24,10 +25,13 @@ static void scan_tick(GPTDriver *driver) {
     GPIOA->INER |= SENSE_MASK;
     for (uint8_t row = 0; row < 8; ++row) {
         GPIOA->DIRCR &= ~SENSE_MASK;
-        palSetLine(select_pins[row]);
-        __asm__ volatile("nop\nnop\nnop" ::: "memory");
+        gpio_write_pin_high(select_pins[row]);
+        // The scan IRQ cannot reuse the foreground delay timer.
+        __NOP();
+        __NOP();
+        __NOP();
         scanned[row] = (GPIOA->DINR >> SENSE_SHIFT) & 0xff;
-        palClearLine(select_pins[row]);
+        gpio_write_pin_low(select_pins[row]);
         GPIOA->DIRCR |= SENSE_MASK;
     }
     GPIOA->INER &= ~SENSE_MASK;
@@ -36,14 +40,16 @@ static void scan_tick(GPTDriver *driver) {
 
 void md770_scan_init(void) {
     for (uint8_t i = 0; i < 8; ++i) {
-        palClearLine(select_pins[i]);
-        palSetLineMode(select_pins[i], PAL_MODE_OUTPUT_PUSHPULL);
+        gpio_write_pin_low(select_pins[i]);
+        gpio_set_pin_output(select_pins[i]);
     }
-    GPIOA->PDR |= SENSE_MASK;
-    GPIOA->PUR &= ~SENSE_MASK;
+    for (uint8_t i = 0; i < 8; ++i) {
+        gpio_set_pin_input_low(PAL_LINE(GPIOA, i + SENSE_SHIFT));
+    }
     md770_rgb_init();
     static const GPTConfig scan_config = {.frequency = 48000000, .callback = scan_tick};
     gptStart(&GPTD_BFTM0, &scan_config);
+    scan_tick(NULL);
     gptStartContinuous(&GPTD_BFTM0, 39441);
 }
 

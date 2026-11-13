@@ -1,6 +1,6 @@
 // Copyright 2026 Mark Ellis (@markwellis)
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "md770.h"
+#include "md770rgb_bt.h"
 #include "protocol.h"
 #include <string.h>
 
@@ -13,7 +13,7 @@ void md770_link_init(void) {
     palSetLineMode(B0, PAL_MODE_HT32_AF(6) | PAL_MODE_OUTPUT_PUSHPULL);
     palSetLineMode(B1, PAL_MODE_HT32_AF(6) | PAL_MODE_INPUT);
 #ifdef MD770_LEFT
-    palSetLineMode(B8, PAL_MODE_INPUT);
+    gpio_set_pin_input(B8);
 #endif
     sdStart(&SD0, &serial_config);
 }
@@ -32,26 +32,26 @@ void md770_link_task(matrix_row_t rows[MATRIX_ROWS]) {
             md770_rgb_receive(payload);
 #else
             for (uint8_t i = 0; i < 8; ++i) {
-                rows[7 + i] = (uint8_t)~payload[i];
+                rows[8 + i] = (uint8_t)~payload[i];
             }
 #endif
         }
     }
 #ifndef MD770_LEFT
     if (timer_elapsed32(last_received) >= 100) {
-        memset(rows + 7, 0, 8 * sizeof(matrix_row_t));
+        memset(rows + 8, 0, 8 * sizeof(matrix_row_t));
     }
 #endif
     if (timer_elapsed32(last_sent) < 32) {
         return;
     }
 #ifdef MD770_LEFT
-    if (!palReadLine(B8)) {
+    if (!gpio_read_pin(B8)) {
         return;
     }
     uint8_t keys[8];
     for (uint8_t i = 0; i < 8; ++i) {
-        keys[i] = (uint8_t)~matrix_get_row(7 + i);
+        keys[i] = (uint8_t)~matrix_get_row(8 + i);
     }
     const uint8_t *out    = keys;
     uint8_t        length = sizeof(keys);

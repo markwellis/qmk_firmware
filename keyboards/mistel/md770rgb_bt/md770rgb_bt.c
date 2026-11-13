@@ -1,8 +1,11 @@
 // Copyright 2026 Mark Ellis (@markwellis)
 // SPDX-License-Identifier: GPL-2.0-or-later
-#include "md770.h"
+#include "md770rgb_bt.h"
 #include "bootloader.h"
 #include <string.h>
+
+#define MD770_BOOT_REQUEST ((volatile uint32_t *)0x20003ffcU)
+#define MD770_BOOT_REQUEST_IAP 0x55aafaf5U
 
 void matrix_init_custom(void) {
     md770_scan_init();
@@ -15,11 +18,11 @@ bool matrix_scan_custom(matrix_row_t rows[MATRIX_ROWS]) {
     memcpy(previous, rows, sizeof(previous));
     md770_scan_copy(local);
 #ifdef MD770_LEFT
-    memcpy(rows + 7, local, sizeof(local));
+    memcpy(rows + 8, local, sizeof(local));
 #else
-    memcpy(rows, local, 7 * sizeof(matrix_row_t));
+    memcpy(rows, local, sizeof(local));
+    rows[7] = (uint8_t)~local[7] & 0x0f;
 #endif
-    md770_rgb_task();
     md770_link_task(rows);
     return memcmp(previous, rows, sizeof(previous)) != 0;
 }
@@ -28,7 +31,7 @@ void bootloader_jump(void) {
     usbDisconnectBus(&USBD1);
     wait_ms(30);
     chSysDisable();
-    *(volatile uint32_t *)0x20003ffc = 0x55aafaf5;
+    *MD770_BOOT_REQUEST = MD770_BOOT_REQUEST_IAP;
     __DSB();
     NVIC_SystemReset();
 }
