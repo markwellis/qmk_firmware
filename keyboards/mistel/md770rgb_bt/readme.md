@@ -1,6 +1,6 @@
 # Mistel MD770 RGB BT
 
-![MD770 RGB BT right PCB](https://raw.githubusercontent.com/markwellis/md770-qmk-firmware-stuff/main/docs/mistel-md770-photos/right-pcb.jpg)
+![MD770 RGB BT right PCB](https://raw.githubusercontent.com/markwellis/mistel-md770-qmk/main/docs/mistel-md770-photos/right-pcb.jpg)
 
 A wired port for the US-layout MD770 RGB BT. Bluetooth and the vendor's on-keyboard macro editor are not implemented.
 
@@ -76,4 +76,4 @@ These methods need functioning firmware. ROM recovery requires opening the
 case: SEL2 on the right and SEL4 on the left select ROM recovery at power-on.
 Do not bridge pads during normal flashing. Board photos and verified stock
 recovery procedures are available in the optional
-[hardware and recovery reference](https://github.com/markwellis/md770-qmk-firmware-stuff).
+[hardware and recovery reference](https://github.com/markwellis/mistel-md770-qmk).
