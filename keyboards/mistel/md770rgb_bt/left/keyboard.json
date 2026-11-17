@@ -1,0 +1,11 @@
+{
+    "bootmagic": {
+        "matrix": [15, 0]
+    },
+    "eeprom": {
+        "driver": "transient"
+    },
+    "usb": {
+        "pid": "0x041A"
+    }
+}

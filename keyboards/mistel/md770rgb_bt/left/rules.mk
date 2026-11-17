@@ -1,0 +1,4 @@
+OPT_DEFS += -DMD770_LEFT
+LDFLAGS += -Wl,--defsym=md770_left=1
+CONNECTION_ENABLE = yes
+NO_USB_STARTUP_CHECK = yes
